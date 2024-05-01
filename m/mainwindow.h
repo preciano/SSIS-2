@@ -30,6 +30,18 @@ private slots:
 
     void on_saveButton_clicked();
 
+    void on_searchButton1_clicked();
+
+    void on_searchButton2_clicked();
+
+    void on_editButton2_clicked();
+
+    void on_saveButton2_clicked();
+
+    void on_cancelButton1_clicked();
+
+    void on_cancelButton2_clicked();
+
 private:
     Ui::MainWindow *ui;
     QSqlDatabase DB_Connection;
@@ -37,5 +49,8 @@ private:
 
     void updateRecord(int row);
     void clearInputFields();
+
+    void updateRecord2(int row);
+    void clearInputFields2();
 };
 #endif // MAINWINDOW_H

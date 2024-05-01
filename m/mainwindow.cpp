@@ -10,9 +10,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     ui->saveButton->hide();
+    ui->saveButton2->hide();
+    ui->cancelButton1->hide();
+    ui->cancelButton2->hide();
 
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("/Users/catherine/Downloads/SQL - 2nd Ass./m/mainwindow.db");
+    db.setDatabaseName("C://Users//User//Downloads//SSIS-2-main//SSIS-2-main//m//mainwindow.db");
 
     if (!db.open()) {
         qDebug() << "Error opening database:" << db.lastError().text();
@@ -215,6 +218,7 @@ void MainWindow::on_addButton1_clicked()
         }
         ++row;
     }
+    db.close();
 }
 
 
@@ -293,6 +297,7 @@ void MainWindow::on_addButton2_clicked()
         }
         ++row;
     }
+    db.close();
 }
 
 
@@ -337,6 +342,8 @@ void MainWindow::on_deleteButton1_clicked()
 
     // Remove the selected row from the table widget
     ui->studentT->removeRow(selectedRow);
+
+    db.close();
 }
 
 
@@ -364,6 +371,7 @@ void MainWindow::on_editButton1_clicked()
 
     // Show the save button
     ui->saveButton->show();
+    ui->cancelButton1->show();
 }
 
 void MainWindow::updateRecord(int row)
@@ -473,5 +481,216 @@ void MainWindow::on_saveButton_clicked()
 
     // Hide the save button after saving changes
     ui->saveButton->hide();
+    ui->cancelButton1->hide();
+    db.close();
+}
+
+void MainWindow::on_searchButton1_clicked()
+{
+    // Retrieve the ID entered by the user
+    QString idNumber = ui->lineSearch->text();
+
+    // Open the database connection
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isOpen()) {
+        qDebug() << "Database not open!";
+        return;
+    }
+
+    // Prepare the query to retrieve student details by ID
+    QSqlQuery query(db);
+    query.prepare("SELECT * FROM Students1 WHERE IDNumber = :idNumber");
+    query.bindValue(":idNumber", idNumber);
+
+    // Execute the query
+    if (!query.exec()) {
+        qDebug() << "Error executing search query:" << query.lastError().text();
+        return;
+    }
+
+    if (query.next()) {
+        // Student found, populate line edits with details
+        ui->lastName->setText(query.value("Surname").toString());
+        ui->firstName->setText(query.value("FirstName").toString());
+        ui->middleName->setText(query.value("MiddleName").toString());
+        ui->ID->setText(query.value("IDNumber").toString());
+        ui->gender->setCurrentText(query.value("Gender").toString());
+        ui->yrLvl->setCurrentText(query.value("YearLevel").toString());
+        ui->course->setText(query.value("CourseCode").toString());
+
+        ui->ID->setEnabled(false);
+    } else {
+        // Student not found, display a message
+        QMessageBox::warning(this, "Student Not Found", "No student found with the provided ID.");
+    }
+
+    db.close();
+}
+
+
+void MainWindow::on_searchButton2_clicked()
+{
+    // Retrieve the ID entered by the user
+    QString courseC = ui->lineSearch2->text();
+
+    // Open the database connection
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isOpen()) {
+        qDebug() << "Database not open!";
+        return;
+    }
+
+    // Prepare the query to retrieve course details by Course Code
+    QSqlQuery query(db);
+    query.prepare("SELECT * FROM Course2 WHERE CourseCode = :courseC");
+    query.bindValue(":courseC", courseC);
+
+    // Execute the query
+    if (!query.exec()) {
+        qDebug() << "Error executing search query:" << query.lastError().text();
+        return;
+    }
+
+    if (query.next()) {
+        // Course found, populate line edits with details
+        ui->cC->setText(query.value("CourseCode").toString());
+        ui->cN->setText(query.value("CourseName").toString());
+    } else {
+        // Student not found, display a message
+        QMessageBox::warning(this, "Course Not Found", "No student found with the provided Course Code.");
+    }
+
+    db.close();
+}
+
+
+void MainWindow::on_editButton2_clicked()
+{
+    // Get the selected row index
+    int selectedRow = ui->courseT->currentRow();
+    if (selectedRow < 0) {
+        // No row selected, display a message to the user
+        QMessageBox::warning(this, "No Row Selected", "Please select a row to edit.");
+        return;
+    }
+
+    // Populate the input fields with the data of the selected row
+    ui->cC->setText(ui->courseT->item(selectedRow, 0)->text());
+    ui->cN->setText(ui->courseT->item(selectedRow, 1)->text());
+
+    // Show the save button
+    ui->saveButton2->show();
+    ui->cancelButton2->show();
+}
+
+
+void MainWindow::on_saveButton2_clicked()
+{
+    QString courseCode = ui->cC->text();
+    //QString courseName = ui->cN->text();
+
+    // Get the selected row index
+    int selectedRow = ui->courseT->currentRow();
+    if (selectedRow < 0) {
+        // No row selected, display a message to the user
+        QMessageBox::warning(this, "No Row Selected", "Please select a row to save changes.");
+        return;
+    }
+
+    // Open the database connection
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isOpen()) {
+        qDebug() << "Database not open!";
+        return;
+    }
+
+    // Check if the CourseCode already exists in the database
+    QSqlQuery checkQuery(db);
+    checkQuery.prepare("SELECT CourseCode FROM Course2 WHERE CourseCode = :courseCode");
+    checkQuery.bindValue(":courseCode", courseCode);
+    if (!checkQuery.exec()) {
+        qDebug() << "Error executing query to check ID existence:" << checkQuery.lastError().text();
+        return;
+    }
+
+    if (checkQuery.next()) {
+        // ID already exists, display a message to the user
+        QMessageBox::warning(this, "Duplicate Course", "The entered Course already exists in the database.");
+        return;
+    }
+
+    // Trigger the update operation
+    updateRecord2(selectedRow);
+
+    // Hide the save button after saving changes
+    ui->saveButton2->hide();
+    ui->cancelButton2->hide();
+    db.close();
+}
+
+void MainWindow::updateRecord2(int row)
+{
+    QString courseCode = ui->cC->text();
+    QString courseName = ui->cN->text();
+
+    // Open the database connection
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isOpen()) {
+        qDebug() << "Database not open!";
+        return;
+    }
+
+    // Start a transaction to ensure data consistency
+    db.transaction();
+
+    // Prepare the UPDATE query
+    QSqlQuery query(db);
+    query.prepare("UPDATE Course2 SET CourseName = :courseName WHERE CourseCode = :courseCode");
+    query.bindValue(":courseCode", courseCode);
+    query.bindValue(":courseName", courseName);
+
+    // Execute the query
+    if (!query.exec()) {
+        qDebug() << "Error executing UPDATE query:" << query.lastError().text();
+        // Rollback the transaction if an error occurs
+        db.rollback();
+        return;
+    }
+
+    // Commit the transaction
+    db.commit();
+
+    // Update the table widget with the edited data
+    ui->courseT->item(row, 0)->setText(courseCode);
+    ui->courseT->item(row, 1)->setText(courseName);
+
+    // Clear input fields after successful update
+    clearInputFields();
+}
+
+void MainWindow::clearInputFields2()
+{
+    // Clear input fields after editing or cancelling
+    ui->cC->clear();
+    ui->cN->clear();
+
+    // Enable the ID field for further editing
+    ui->cC->setEnabled(true);
+}
+
+void MainWindow::on_cancelButton1_clicked()
+{
+    clearInputFields();
+
+    ui->saveButton->hide();
+    ui->cancelButton1->hide();
+}
+
+void MainWindow::on_cancelButton2_clicked()
+{
+    clearInputFields2();
+
+    ui->saveButton2->hide();
+    ui->cancelButton2->hide();
 }
 
